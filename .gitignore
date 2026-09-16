@@ -1,0 +1,5 @@
+.venv
+venv
+backend/.env
+backend/app/__pycache__
+backend/create
