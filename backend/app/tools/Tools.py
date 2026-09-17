@@ -1,4 +1,3 @@
-
 from pathlib import Path
 from typing import Annotated
 
@@ -13,14 +12,11 @@ from langchain_core.tools import tool
 def directory(
     path: Annotated[
         str,
-        "Path of the directory to inspect. Defaults to the current project directory."
+        "Path of the directory to inspect. Defaults to the backend directory."
     ] = "."
 ) -> str:
     """
     List all files and directories inside a given directory.
-
-    Use this tool to understand the structure of the static website
-    project before creating or modifying files.
     """
 
     try:
@@ -50,7 +46,66 @@ def directory(
 
 
 # ============================================================
-# TOOL 2: READ
+# TOOL 2: CREATE PROJECT FOLDER
+# ============================================================
+
+@tool
+def create_project(
+    project_name: Annotated[
+        str,
+        "Name of the website project folder."
+    ]
+) -> str:
+    """
+    Create a new project folder directly inside the backend directory.
+
+    Example:
+        create_project("my-portfolio")
+
+    Creates:
+        backend/my-portfolio/
+    """
+
+    try:
+        project_name = project_name.strip()
+
+        if not project_name:
+            return "Project name cannot be empty."
+
+        # Backend is the current working directory
+        backend_path = Path(".")
+
+        # Prevent the LLM from creating nested paths
+        safe_project_name = Path(project_name).name
+
+        project_path = backend_path / safe_project_name
+
+        if project_path.exists():
+
+            if project_path.is_dir():
+                return (
+                    f"Project folder already exists: "
+                    f"backend/{safe_project_name}"
+                )
+
+            return (
+                f"A file already exists with this name: "
+                f"backend/{safe_project_name}"
+            )
+
+        project_path.mkdir(parents=True)
+
+        return (
+            f"Project folder created successfully: "
+            f"backend/{safe_project_name}"
+        )
+
+    except Exception as e:
+        return f"Error creating project folder: {str(e)}"
+
+
+# ============================================================
+# TOOL 3: READ
 # ============================================================
 
 @tool
@@ -62,9 +117,6 @@ def read(
 ) -> str:
     """
     Read the complete contents of an existing file.
-
-    Use this tool before modifying an existing website file so that
-    existing code and functionality can be understood and preserved.
     """
 
     try:
@@ -83,21 +135,19 @@ def read(
 
 
 # ============================================================
-# TOOL 3: CREATE FILE
+# TOOL 4: CREATE FILE
 # ============================================================
 
 @tool
 def create_file(
     file_path: Annotated[
         str,
-        "Path where the new website file should be created."
+        "Path of the new website file. The file must be inside "
+        "the project folder."
     ]
 ) -> str:
     """
-    Create a new empty file in the static website project.
-
-    Use this tool when a required file does not already exist.
-    After creating the file, use the write tool to add its content.
+    Create a new empty website file inside the project folder.
     """
 
     try:
@@ -116,14 +166,14 @@ def create_file(
 
 
 # ============================================================
-# TOOL 4: WRITE
+# TOOL 5: WRITE
 # ============================================================
 
 @tool
 def write(
     file_path: Annotated[
         str,
-        "Path of the existing file that needs to be updated."
+        "Path of the existing website file that needs to be updated."
     ],
     content: Annotated[
         str,
@@ -132,11 +182,6 @@ def write(
 ) -> str:
     """
     Write or replace the complete contents of an existing file.
-
-    Use this tool to update HTML, CSS, JavaScript, or other static
-    website files after reading the existing file when necessary.
-
-    The content provided should be the complete file content.
     """
 
     try:
@@ -165,6 +210,7 @@ def write(
 
 tools = [
     directory,
+    create_project,
     read,
     create_file,
     write,
